@@ -1,0 +1,24 @@
+{
+  "name": "ts-interface-yapi",
+  "version": "0.1.0",
+  "author": "your name",
+  "description": "My Electron app",
+  "main": "main.js",
+  "build": {
+    "appId": "com.xxx.app",
+    "mac": {
+      "target": ["dmg","zip"]
+    },
+    "win": {
+      "target": ["nsis","zip"]
+    }
+  },
+  "scripts": {
+    "start": "nodemon --watch main.js --exec electron .",
+    "dist": "electron-builder --win --x64"
+  },
+  "devDependencies": {
+    "electron": "^11.2.0",
+    "electron-builder": "^22.9.1"
+  }
+}

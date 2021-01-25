@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>typeScript interface Yapi</title>
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+    
+    <style>
+        .margin-L{
+            padding-left: 20px;
+            font-size: 14px;
+        }
+        #box{
+            height: calc(100vh - 60px);
+            overflow: auto;
+            width: 60%;
+            border: 1px solid #cccccc;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        textarea{
+            width:100%;
+            height: calc(100vh - 115px);
+            border: 1px solid #cccccc;
+            border-radius: 8px;
+            resize: none;
+            margin-right: 10px;
+        }
+        body{
+            padding: 10px;
+            margin: 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        #btn{
+            width:100%;
+            background: #67c23a;
+            height: 48px;
+            border-radius: 8px;
+            text-align: center;
+            color: #ffffff;
+            line-height: 48px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+        .textarea-box{
+            width: 35%;
+            display: flex;
+            flex-direction: column;
+        }
+        /*滚动条整体样式*/
+        ::-webkit-scrollbar {
+            width: 4px;
+            height:4px;
+        }
+        /*滚动条滑块*/
+        ::-webkit-scrollbar-thumb {
+            border-radius: 10px;
+            -webkit-box-shadow: inset 0 0 5px rgba(207, 204, 204, 0.2);
+            background: #b4b3b3;
+        }
+        /*滚动条轨道*/
+        ::-webkit-scrollbar-track {
+            -webkit-box-shadow: inset 0 0 1px rgba(194, 189, 189, 0.2);
+            border-radius: 10px;
+            background: #e6e6e6;
+        }
+    </style>
+</head>
+<body style="background: white;">
+    <div class="textarea-box">
+        <textarea id="textarea" ></textarea>
+        <div id="btn">生成TS interface</div>
+    </div>
+    <div id="box"></div>
+</body><script>
+    /** 返回数据对应格式 */
+    function interfaceKeyType(typeString){
+        if(!typeString) return "any"
+        if(typeString == "integer") return "number"
+        return typeString
+    }
+    /** 分解嵌套 */
+    function interfaceKeyTypeInfoData(typeString,keyInfo){
+        if(typeString  == "object") return fomatInterFace(keyInfo)
+        if(typeString == "array") return fomatInterFace(keyInfo.items)
+        return false
+    }
+    /** 分解数据生属性成对象 */
+    function fomatInterFace(obj){
+        let interFaceObj = obj.properties 
+        let interFaceData = []
+        for(let k in interFaceObj){
+            if(k !="required" && k !="mock"&& k !="description"&& k !="type"){
+                interFaceData.push({
+                    key:k,
+                    keyTypeString:interfaceKeyType(interFaceObj[k].type),
+                    keyTypeInfo:interfaceKeyTypeInfoData(interFaceObj[k].type,interFaceObj[k]),
+                    keyDesc:interFaceObj[k].description || "暂无说明"
+                })
+            }
+        }
+        return interFaceData
+    }
+    /** 无层级数据生成html */
+    function setOneDataHtmlCont(itemCont){
+        return `
+            <div class="margin-L">
+                <div>/** ${itemCont.keyDesc}*/</div> 
+                <div>${itemCont.key}?:${itemCont.keyTypeString}</div> 
+            </div> 
+        `
+    }
+    /** 下一层级层级为数组/对象数据生成html */
+    function setDataHtmlCont(itemCont,type){
+        if(itemCont.length<1) return ""
+        let html=""
+        itemCont.map(item=>{
+            if(item.keyTypeString == "object" ||item.keyTypeString == "array" ){
+                html += `<div class="margin-L">
+                <div>/** ${item.keyDesc}*/</div> 
+                <div>${item.key}?: { `
+                html+= `</div>`+ setDataHtmlCont(item.keyTypeInfo)
+                if(item.keyTypeString == "object")  html+= `}</div> `
+                if(item.keyTypeString == "array")  html+= `}[]</div> `
+            }else{
+                html += setOneDataHtmlCont(item)
+            }
+        })
+        return html
+    }
+    function fomatInterFaceFnuction(obj){
+        let interFaceData = fomatInterFace(obj)
+        let box = document.getElementById("box")
+        let innerHtml = "interface Res{"
+
+        interFaceData.forEach(item=>{
+            if(item.keyTypeString == "object" || item.keyTypeString == "array"){
+                innerHtml += `<div class="margin-L">
+                    <div>/** ${item.keyDesc}*/</div> 
+                    <div>${item.key}?: { `
+                innerHtml+= `</div>`+ setDataHtmlCont(item.keyTypeInfo,item.keyTypeString )
+                if(item.keyTypeString == "object")  innerHtml+= `}</div> `
+                if(item.keyTypeString == "array")  innerHtml+= `}[]</div> `
+            }else{
+                innerHtml += setOneDataHtmlCont(item)
+            }
+        })
+        innerHtml += "}"
+        box.innerHTML =  innerHtml
+    }
+
+    document.getElementById("btn").addEventListener("click",function() {
+        let objData =  document.getElementById("textarea").value || {}
+        if(!objData) return alert("请输入内容")
+        try{
+            objData = JSON.parse(objData)
+            fomatInterFaceFnuction(objData)
+        }catch(err){
+            alert("输入格式错误")
+            throw(err)
+        }
+    })
+ </script>
+</html>
